@@ -128,3 +128,6 @@ select:focus,input:focus,button:focus-visible{outline:3px solid #d9a3b5;outline-
   .trow > div:nth-child(2){grid-column:1/-1}
   .trow > div:nth-child(6){grid-column:1/-1}
 }
+
+.dd-opt:hover{background:var(--brand-tint)}
+.dd-btn:hover:not(:disabled){border-color:#b98b9a}
