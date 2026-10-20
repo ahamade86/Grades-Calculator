@@ -71,7 +71,7 @@
   function build() {
     var box = $("trRows"); box.innerHTML = "";
     var head = document.createElement("div"); head.className = "trow head";
-    head.innerHTML = "<div>#</div><div>Assessment</div><div>Earned score</div><div>Max score</div><div>Weight %</div><div>Missed</div><div>Adjusted %</div><div>Score %</div><div></div>";
+    head.innerHTML = "<div>#</div><div>Assessment</div><div title='Earned score'>Earned</div><div title='Max score'>Max</div><div>Weight %</div><div title='Missed with Associate Dean approval'>Missed</div><div>Adjusted %</div><div>Score %</div><div></div>";
     box.appendChild(head);
     rows.forEach(function (r, i) {
       var el = document.createElement("div"); el.className = "trow"; el.id = "tr-" + i;
@@ -81,10 +81,10 @@
         '<div><span class="c-label">Earned score</span><input type="number" inputmode="decimal" min="0" step="any" class="t-earned" autocomplete="off" placeholder="-" aria-label="Earned score"></div>' +
         '<div><span class="c-label">Max score</span><input type="number" inputmode="decimal" min="0" step="any" class="t-max" autocomplete="off" placeholder="-" aria-label="Max score"></div>' +
         '<div><span class="c-label">Weight %</span><input type="number" inputmode="decimal" min="0" step="any" class="t-weight" autocomplete="off" placeholder="-" aria-label="Weight percent"></div>' +
-        '<div><label class="sw"><input type="checkbox" class="t-missed" aria-label="Missed with approval"><span class="track"></span><span>Missed (approved)</span></label></div>' +
+        '<div><label class="sw"><input type="checkbox" class="t-missed" aria-label="Missed with approval"><span class="track"></span><span>Missed<span class="appr"> (approved)</span></span></label></div>' +
         '<div class="t-adj"><span class="c-label">Adjusted %</span><span class="av">-</span></div>' +
         '<div class="t-pct"><span class="c-label">Score %</span><span class="pv">-</span></div>' +
-        '<div><button type="button" class="x" aria-label="Remove row">Remove</button></div>';
+        '<div><button type="button" class="x" aria-label="Remove row" title="Remove row">&times;</button></div>';
       el.querySelector(".t-label").value = r.label;
       el.querySelector(".t-earned").value = r.earned;
       el.querySelector(".t-max").value = r.max;
