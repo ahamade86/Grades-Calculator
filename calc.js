@@ -1,21 +1,48 @@
 // Pure calculation logic (no DOM). Used by the page and by tests.
+//
+// Rules:
+//  - Two quizzes (course.quizPool.drop) are always treated as dropped, as if they never existed.
+//  - Quizzes with no grade yet are assumed dropped first (latest in the course order first).
+//    If fewer than two blanks remain, the lowest scoring entered quizzes are dropped.
+//  - A quiz marked missed (approved) is never one of the drops; its weight shifts forward.
+//  - Missed weight is shifted proportionally to the later assessments, in course order,
+//    on the course with the dropped quizzes removed. Weights always add up to 100%.
 (function (root) {
+  function has(scores, id) { var s = scores[id]; return s !== null && s !== undefined && !isNaN(s); }
+
+  function pickDrops(course, scores, missed) {
+    var pool = course.quizPool, out = {};
+    if (!pool) return out;
+    var cands = course.items.filter(function (i) { return i.type === "quiz" && !missed[i.id]; });
+    var need = Math.min(pool.drop, cands.length);
+    var blank = cands.filter(function (q) { return !has(scores, q.id); }).reverse(); // latest first
+    blank.slice(0, need).forEach(function (q) { out[q.id] = "assumed"; });
+    need -= Math.min(need, blank.length);
+    if (need > 0) {
+      var entered = cands.filter(function (q) { return has(scores, q.id); });
+      entered.sort(function (a, b) {
+        var d = scores[a.id] / a.points - scores[b.id] / b.points;
+        return d !== 0 ? d : course.items.indexOf(b) - course.items.indexOf(a); // tie: later quiz dropped
+      });
+      entered.slice(0, need).forEach(function (q) { out[q.id] = "actual"; });
+    }
+    return out;
+  }
+
   function compute(course, scores, missed, cap) {
-    var items = course.items;
-    var pool = course.quizPool;
-    var quizzes = items.filter(function (i) { return i.type === "quiz"; });
-    var nq = quizzes.length;
-    var e0 = pool ? pool.totalWeight / nq : 0; // effective weight of one quiz in the pool
+    var items = course.items, pool = course.quizPool;
+    var nq = items.filter(function (i) { return i.type === "quiz"; }).length;
+    var perQuiz = pool ? pool.totalWeight / (nq - pool.drop) : 0;
 
-    // effective weights
+    var dropped = pickDrops(course, scores, missed);
+    var seq = items.filter(function (i) { return !dropped[i.id]; });
     var w = {};
-    items.forEach(function (i) { w[i.id] = i.type === "quiz" ? e0 : i.weight; });
+    items.forEach(function (i) { w[i.id] = dropped[i.id] ? 0 : (i.type === "quiz" ? perQuiz : i.weight); });
 
-    // shift missed weights forward, in course order
     var invalid = null;
-    items.forEach(function (it, k) {
+    seq.forEach(function (it, k) {
       if (!missed[it.id]) return;
-      var rest = items.slice(k + 1).filter(function (x) { return !missed[x.id]; });
+      var rest = seq.slice(k + 1).filter(function (x) { return !missed[x.id]; });
       var R = rest.reduce(function (s, x) { return s + w[x.id]; }, 0);
       if (R <= 0) { invalid = { reason: "none", item: it }; return; }
       var m = (R + w[it.id]) / R;
@@ -24,49 +51,19 @@
     });
     if (!invalid) {
       items.forEach(function (it) {
-        if (it.type !== "quiz" && w[it.id] > cap + 1e-9) invalid = { reason: "cap", item: it, value: w[it.id] };
+        if (it.type !== "quiz" && !missed[it.id] && w[it.id] > cap + 1e-9) invalid = { reason: "cap", item: it, value: w[it.id] };
       });
     }
 
-    // display weight for each item (quizzes shown per counted quiz)
-    var perSlot = pool ? pool.totalWeight / (nq - pool.drop) : 0;
-    var shown = {};
-    items.forEach(function (it) {
-      shown[it.id] = it.type === "quiz" ? (w[it.id] / e0) * perSlot : w[it.id];
-    });
-
     var earned = 0, completed = 0, pts = 0, ptsPossible = 0;
-    var kept = {};
-    // non-quiz items
     items.forEach(function (it) {
-      if (it.type === "quiz" || missed[it.id]) return;
-      var s = scores[it.id];
-      if (s === null || s === undefined || isNaN(s)) return;
-      earned += w[it.id] * s / it.points;
+      if (dropped[it.id] || missed[it.id] || !has(scores, it.id)) return;
+      earned += w[it.id] * scores[it.id] / it.points;
       completed += w[it.id];
-      pts += s; ptsPossible += it.points;
+      pts += scores[it.id]; ptsPossible += it.points;
     });
-    // quiz pool
-    if (pool) {
-      var qn = quizzes.filter(function (q) { return !missed[q.id]; });
-      var S = Math.max(0, qn.length - pool.drop);
-      var sumAll = qn.reduce(function (s, q) { return s + w[q.id]; }, 0);
-      var taken = qn.filter(function (q) { var s = scores[q.id]; return s !== null && s !== undefined && !isNaN(s); });
-      var sumTaken = taken.reduce(function (s, q) { return s + w[q.id]; }, 0);
-      var ranked = taken.slice().sort(function (a, b) { return scores[b.id] / b.points - scores[a.id] / a.points; });
-      var keep = ranked.slice(0, Math.min(S, ranked.length));
-      keep.forEach(function (q) { kept[q.id] = true; });
-      if (S > 0 && keep.length) {
-        var f = Math.min(1, (sumTaken / sumAll) * (qn.length / S));
-        var kw = keep.reduce(function (s, q) { return s + w[q.id]; }, 0);
-        var avg = keep.reduce(function (s, q) { return s + w[q.id] * scores[q.id] / q.points; }, 0) / kw;
-        earned += sumAll * f * avg;
-        completed += sumAll * f;
-        keep.forEach(function (q) { pts += scores[q.id]; ptsPossible += q.points; });
-      }
-    }
     return {
-      weights: w, shown: shown, invalid: invalid, kept: kept,
+      weights: w, shown: w, invalid: invalid, dropped: dropped,
       earned: earned, completed: completed, points: pts, pointsPossible: ptsPossible,
       currentPct: completed > 0 ? earned / completed * 100 : null
     };

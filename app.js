@@ -46,7 +46,7 @@
     $("instrName").textContent = "Instructor: " + instructor.name;
     var p = course.quizPool;
     var nq = course.items.filter(function (i) { return i.type === "quiz"; }).length;
-    $("quizNote").textContent = p ? "Quizzes: your lowest " + p.drop + " of " + nq + " quiz scores are dropped, so only your best " + (nq - p.drop) + " count (" + fmt(p.totalWeight, 2) + "% in total)." : "";
+    $("quizNote").textContent = p ? "Quizzes: your lowest " + p.drop + " of " + nq + " quiz scores are dropped as if they never existed, so only your best " + (nq - p.drop) + " count (" + fmt(p.totalWeight, 2) + "% in total). Until a quiz has a grade, the latest blank quizzes are assumed to be the dropped ones." : "";
     buildRows();
     $("calc").hidden = false;
     notice("");
@@ -116,22 +116,21 @@
       row.classList.toggle("missed", isMissed);
       var inp = row.querySelector(".score input"); inp.disabled = isMissed;
       var shown = res.shown[it.id], orig = it.weight;
-      var changed = !isMissed && Math.abs(shown - orig) > 0.005;
+      var changed = !isMissed && !res.dropped[it.id] && Math.abs(shown - (it.type === "quiz" ? 1 : orig)) > 0.005;
       var wv = row.querySelector(".wv"), wt = row.querySelector(".wt");
       wt.classList.toggle("changed", changed);
-      wv.innerHTML = isMissed ? "0%" : fmt(shown, 2) + "%" + (changed ? '<span class="was">was ' + fmt(orig, 2) + "%</span>" : "");
+      var dropState = res.dropped[it.id];
+      wv.innerHTML = (isMissed || dropState) ? "0%" : fmt(shown, 2) + "%" + (changed ? '<span class="was">was ' + fmt(orig, 2) + "%</span>" : "");
       var tag = row.querySelector(".tag");
-      var dropped = it.type === "quiz" && !isMissed && scores[it.id] !== undefined && !res.kept[it.id];
+      var dropped = !!res.dropped[it.id] && !isMissed;
       row.classList.toggle("dropped", dropped);
-      tag.textContent = isMissed ? "Weight shifted to later assessments" : (dropped ? "Dropped (not in your best " + (course.items.filter(function (i) { return i.type === "quiz"; }).length - course.quizPool.drop) + ")" : "");
+      tag.textContent = isMissed ? "Weight shifted to later assessments" : (dropped ? (res.dropped[it.id] === "assumed" ? "Dropped until graded" : "Dropped (lowest scores)") : "");
     });
-    $("rPoints").textContent = fmt(res.points, 2);
-    $("rPointsOf").textContent = "out of " + fmt(res.pointsPossible, 2) + " graded so far";
     $("rDone").textContent = fmt(res.completed, 1) + "%";
     $("bar").style.width = Math.min(100, res.completed) + "%";
     $("rEarned").textContent = fmt(res.earned, 2);
     $("rEarnedOf").textContent = "out of " + fmt(res.completed, 1) + " completed";
-    if (res.currentPct === null) { $("rPct").textContent = "-"; $("rLetter").textContent = "enter a grade"; }
-    else { $("rPct").textContent = fmt(res.currentPct, 1) + "%"; $("rLetter").textContent = "Letter grade: " + GC.letter(D.letterScale, res.currentPct); }
+    if (res.currentPct === null) { $("rPct").textContent = "-"; $("rLetter").textContent = "-"; }
+    else { $("rPct").textContent = fmt(res.currentPct, 1) + "%"; $("rLetter").textContent = GC.letter(D.letterScale, res.currentPct); }
   }
 })();
