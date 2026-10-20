@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-ap
 .top{background:var(--brand);color:#fff;padding:22px 0 20px}
 .top h1{margin:0;font-size:1.5rem;letter-spacing:.2px}
 .top .sub{margin:4px 0 0;opacity:.85;font-size:.95rem}
-main{padding-top:28px;padding-bottom:40px}
+main.wrap{padding-top:32px;padding-bottom:40px}
 #calc{margin-top:28px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
 h2{margin:0 0 12px;font-size:1.2rem}
@@ -53,6 +53,7 @@ select:focus,input:focus,button:focus-visible{outline:3px solid #d9a3b5;outline-
 .row.missed{background:#faf6f6}
 .row.missed .name,.row.missed .pts,.row.missed .wt{color:#9a9092;text-decoration:line-through}
 .row.dropped .name small{color:var(--warn-ink)}
+.row.dropped .pts,.row.dropped .wt{color:#9a9092}
 .wt.changed{color:var(--brand);font-weight:700}
 .wt .was{display:block;font-size:.75rem;color:var(--muted);font-weight:400;text-decoration:line-through}
 .score{display:flex;align-items:center;gap:6px}
@@ -80,3 +81,16 @@ select:focus,input:focus,button:focus-visible{outline:3px solid #d9a3b5;outline-
   
   .titlebar{flex-direction:column}
 }
+
+/* custom dropdowns: the list always opens directly below the box */
+.native-hidden{position:absolute!important;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
+.dd{position:relative}
+.dd-btn{display:block;width:100%;font:inherit;text-align:left;padding:12px 48px 12px 12px;border:1px solid #cfc6c8;border-radius:8px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%236b6264' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 18px center;color:var(--ink);cursor:pointer;min-height:48px}
+.dd-btn.placeholder{color:#8c8386}
+.dd-btn:disabled{background-color:#f0ecec;color:#9a9092;cursor:not-allowed}
+.dd.open .dd-btn{border-color:var(--brand)}
+.dd-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;margin:0;padding:4px;list-style:none;background:#fff;border:1px solid #cfc6c8;border-radius:8px;box-shadow:0 8px 24px rgba(35,31,32,.18);max-height:260px;overflow:auto}
+.dd-list[hidden]{display:none}
+.dd-opt{padding:11px 12px;border-radius:6px;cursor:pointer}
+.dd-opt.active{background:var(--brand-tint)}
+.dd-opt[aria-selected=true]{color:var(--brand);font-weight:700}

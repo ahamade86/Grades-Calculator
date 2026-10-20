@@ -18,9 +18,67 @@
     if (GC.compute(course, scores, missed, D.capPct).invalid) { scores = {}; missed = {}; }
   }
 
+
+  // Custom dropdown that wraps a native <select> (kept hidden for the logic) and always opens below the box.
+  function enhanceSelect(sel, labelId) {
+    var wrap = document.createElement("div"); wrap.className = "dd";
+    var btn = document.createElement("button"); btn.type = "button"; btn.className = "dd-btn";
+    btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-labelledby", labelId);
+    var list = document.createElement("ul"); list.className = "dd-list"; list.setAttribute("role", "listbox"); list.hidden = true;
+    sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(btn); wrap.appendChild(list); wrap.appendChild(sel);
+    sel.classList.add("native-hidden"); sel.tabIndex = -1; sel.setAttribute("aria-hidden", "true");
+    var items = [], active = -1;
+    function build() {
+      list.innerHTML = ""; items = [];
+      Array.prototype.forEach.call(sel.options, function (o, i) {
+        if (o.value === "") return;
+        var li = document.createElement("li"); li.className = "dd-opt"; li.setAttribute("role", "option");
+        li.textContent = o.textContent; li.dataset.value = o.value;
+        li.setAttribute("aria-selected", sel.value === o.value ? "true" : "false");
+        li.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        li.addEventListener("click", function () { choose(o.value); });
+        list.appendChild(li); items.push(li);
+      });
+      var cur = sel.options[sel.selectedIndex];
+      btn.textContent = cur ? cur.textContent : "";
+      btn.classList.toggle("placeholder", !cur || cur.value === "");
+      btn.disabled = sel.disabled;
+    }
+    function setActive(i) {
+      active = i; items.forEach(function (li, k) { li.classList.toggle("active", k === i); });
+      if (items[i]) items[i].scrollIntoView({ block: "nearest" });
+    }
+    function open() {
+      if (btn.disabled || !items.length) return;
+      list.hidden = false; wrap.classList.add("open"); btn.setAttribute("aria-expanded", "true");
+      var si = items.findIndex(function (li) { return li.dataset.value === sel.value; });
+      setActive(si >= 0 ? si : 0);
+    }
+    function close() { list.hidden = true; wrap.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
+    function choose(v) { sel.value = v; sel.dispatchEvent(new Event("change")); build(); close(); btn.focus(); }
+    btn.addEventListener("click", function () { list.hidden ? open() : close(); });
+    btn.addEventListener("keydown", function (e) {
+      var isOpen = !list.hidden;
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!isOpen) open(); else setActive(Math.min(items.length - 1, active + 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (!isOpen) open(); else setActive(Math.max(0, active - 1)); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!isOpen) open(); else if (items[active]) choose(items[active].dataset.value); }
+      else if (e.key === "Escape") { close(); }
+      else if (e.key === "Tab") { close(); }
+    });
+    document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) close(); });
+    var lbl = document.getElementById(labelId);
+    if (lbl) lbl.addEventListener("click", function (e) { e.preventDefault(); btn.focus(); });
+    new MutationObserver(build).observe(sel, { childList: true, attributes: true, attributeFilter: ["disabled"] });
+    build();
+  }
+
   D.instructors.forEach(function (i) {
     var o = document.createElement("option"); o.value = i.id; o.textContent = i.name; instrSel.appendChild(o);
   });
+
+  enhanceSelect(instrSel, "lblInstructor");
+  enhanceSelect(courseSel, "lblCourse");
 
   instrSel.addEventListener("change", function () {
     courseSel.innerHTML = "";
