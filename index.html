@@ -18,9 +18,55 @@
   <section id="picker" class="card">
     <h2>Select your course</h2>
     <label id="lblInstructor" for="instructor">Instructor</label>
-    <select id="instructor"><option value="">Choose an instructor</option></select>
-    <label id="lblCourse" for="course">Course</label>
-    <select id="course" disabled><option value="">Choose an instructor first</option></select>
+    <select id="instructor" autocomplete="off"><option value="">Choose an instructor</option></select>
+    <div id="courseField">
+      <label id="lblCourse" for="course">Course</label>
+      <select id="course" disabled autocomplete="off"><option value="">Choose an instructor first</option></select>
+    </div>
+  </section>
+
+  <section id="tracker" hidden>
+    <div class="titlebar">
+      <div>
+        <h2>Course Grade Tracker</h2>
+        <p class="muted" id="trInstr"></p>
+      </div>
+      <button id="trReset" class="ghost" type="button">Reset grades</button>
+    </div>
+    <div class="notice info"><strong>Important:</strong> enter all assessments in the order they were completed. List the remaining assessments too (leave the grade blank) so a missed assessment's weight can shift to them. Final course grades are calculated by the faculty. This tracker is for reference only.</div>
+    <div id="trNotice" class="notice" role="alert" hidden></div>
+
+    <div class="results" aria-live="polite">
+      <div class="stat"><span class="k">Total completed</span><span class="v" id="trDone">0%</span><span class="s">adjusted weight graded</span></div>
+      <div class="stat"><span class="k">Total earned</span><span class="v" id="trEarned">0</span><span class="s" id="trEarnedOf"></span></div>
+      <div class="stat hi"><span class="k">Running average</span><span class="v" id="trAvg">-</span><span class="s">on work graded so far</span></div>
+      <div class="stat hi"><span class="k">Running grade</span><span class="v" id="trLetter">-</span><span class="s">based on running average</span></div>
+    </div>
+    <div class="bar" aria-hidden="true"><div id="trBar"></div></div>
+
+    <div class="table tr-table" id="trRows"></div>
+    <div class="tr-actions">
+      <button id="trAdd" class="ghost" type="button">Add row</button>
+      <span class="muted" id="trTotal"></span>
+    </div>
+
+    <h3 class="tr-h">Average needed to reach a target grade</h3>
+    <div class="table tr-targets" id="trTargets"></div>
+    <p class="help">Average needed is the average you must score on all assessments not yet graded. Probability uses the normal distribution with your average and standard deviation so far (it needs at least two graded assessments).</p>
+
+    <details class="about">
+      <summary>About this tool</summary>
+      <h4>Disclaimer</h4>
+      <p>This grade calculator tool is provided as a resource to help students track their academic performance and set future goals. While every effort has been made to ensure the accuracy of the calculations, the results are based on the data provided by the user and are for informational purposes only. The tool should not be considered a substitute for professional academic advice. Users are encouraged to consult with their instructors or academic advisors for personalized guidance. The creator of this tool is not responsible for any decisions made based on the results obtained from this calculator.</p>
+      <h4>Grade Calculator</h4>
+      <p>This feature allows students to input their scores to calculate their running average and determine the average score needed to achieve specific grades such as an A or B. The results are based on the accuracy and completeness of the data entered by the user. The calculated targets are intended to serve as goals and do not guarantee a specific grade outcome. Various factors, including exam difficulty, grading policies, and individual performance, can influence final grades.</p>
+      <h4>Probability Calculator</h4>
+      <p>This feature estimates the probability of achieving a specific target grade based on current performance data and statistical methods. The probability estimates are based on the assumption that future performance will follow a normal distribution and that past performance is indicative of future results. These estimates are not guarantees and should be used as a guide rather than a definitive prediction. Users should consider additional factors such as changes in study habits, external influences, and individual effort when interpreting the results.</p>
+      <h4>How the probability is calculated</h4>
+      <p>Your average (mean) and standard deviation come from your graded scores. The Z-score is Z = (X - mean) / SD, where X is the average needed for the target grade. The probability is 1 minus the standard normal distribution value at Z.</p>
+      <p>By using this tool, you acknowledge that the results are estimates and that you should use your own judgment and seek professional advice when making academic decisions.</p>
+      <p class="muted">For feedback and comments akhawaja@aus.edu</p>
+    </details>
   </section>
 
   <section id="calc" hidden>
@@ -56,6 +102,7 @@
 
 <script src="courses.js"></script>
 <script src="calc.js"></script>
+<script src="tracker.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

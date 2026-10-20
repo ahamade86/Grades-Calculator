@@ -31,13 +31,14 @@
 
   function compute(course, scores, missed, cap) {
     var items = course.items, pool = course.quizPool;
+    var pooled = function (i) { return pool && i.type === "quiz"; };
     var nq = items.filter(function (i) { return i.type === "quiz"; }).length;
     var perQuiz = pool ? pool.totalWeight / (nq - pool.drop) : 0;
 
     var dropped = pickDrops(course, scores, missed);
     var seq = items.filter(function (i) { return !dropped[i.id]; });
     var w = {};
-    items.forEach(function (i) { w[i.id] = dropped[i.id] ? 0 : (i.type === "quiz" ? perQuiz : i.weight); });
+    items.forEach(function (i) { w[i.id] = dropped[i.id] ? 0 : (pooled(i) ? perQuiz : i.weight); });
 
     var invalid = null;
     seq.forEach(function (it, k) {
@@ -51,7 +52,7 @@
     });
     if (!invalid) {
       items.forEach(function (it) {
-        if (it.type !== "quiz" && !missed[it.id] && w[it.id] > cap + 1e-9) invalid = { reason: "cap", item: it, value: w[it.id] };
+        if (!pooled(it) && !missed[it.id] && w[it.id] > cap + 1e-9) invalid = { reason: "cap", item: it, value: w[it.id] };
       });
     }
 

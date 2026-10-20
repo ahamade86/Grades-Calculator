@@ -5,19 +5,10 @@
   var course = null, instructor = null;
   var scores = {}, missed = {};
 
-  function fmt(n, d) { return (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace(/\.?0+$/, "") || "0"; }
-  function key() { return "gc:" + instructor.id + ":" + course.id; }
-  function save() { try { localStorage.setItem(key(), JSON.stringify({ s: scores, m: missed })); } catch (e) {} }
-  function load() {
-    scores = {}; missed = {};
-    try {
-      var v = JSON.parse(localStorage.getItem(key()) || "null");
-      if (v) { scores = v.s || {}; missed = v.m || {}; }
-    } catch (e) {}
-    // a saved state that breaks the cap is discarded
-    if (GC.compute(course, scores, missed, D.capPct).invalid) { scores = {}; missed = {}; }
-  }
-
+  function fmt(n, d) { var s = (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return s.indexOf(".") >= 0 ? (s.replace(/\.?0+$/, "") || "0") : s; }
+  // Grades are never saved: refreshing the page starts over at the instructor selector.
+  function save() {}
+  function load() { scores = {}; missed = {}; }
 
   // Custom dropdown that wraps a native <select> (kept hidden for the logic) and always opens below the box.
   function enhanceSelect(sel, labelId) {
@@ -80,10 +71,22 @@
   enhanceSelect(instrSel, "lblInstructor");
   enhanceSelect(courseSel, "lblCourse");
 
+  instrSel.value = ""; // never restore a previous selection after a refresh
+
   instrSel.addEventListener("change", function () {
     courseSel.innerHTML = "";
     $("calc").hidden = true;
+    $("tracker").hidden = true;
+    $("courseField").hidden = false;
     instructor = D.instructors.filter(function (i) { return i.id === instrSel.value; })[0] || null;
+    if (instructor && instructor.tracker) {
+      courseSel.disabled = true;
+      courseSel.innerHTML = '<option value="">No course selection needed</option>';
+      $("courseField").hidden = true;
+      $("tracker").hidden = false;
+      GCTracker.open(instructor);
+      return;
+    }
     if (!instructor) {
       courseSel.disabled = true;
       courseSel.innerHTML = '<option value="">Choose an instructor first</option>';
@@ -174,7 +177,7 @@
       row.classList.toggle("missed", isMissed);
       var inp = row.querySelector(".score input"); inp.disabled = isMissed;
       var shown = res.shown[it.id], orig = it.weight;
-      var changed = !isMissed && !res.dropped[it.id] && Math.abs(shown - (it.type === "quiz" ? 1 : orig)) > 0.005;
+      var changed = !isMissed && !res.dropped[it.id] && Math.abs(shown - orig) > 0.005;
       var wv = row.querySelector(".wv"), wt = row.querySelector(".wt");
       wt.classList.toggle("changed", changed);
       var dropState = res.dropped[it.id];
@@ -192,3 +195,6 @@
     else { $("rPct").textContent = fmt(res.currentPct, 1) + "%"; $("rLetter").textContent = GC.letter(D.letterScale, res.currentPct); }
   }
 })();
+
+// a page restored from the back/forward cache must also start fresh
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
