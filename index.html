@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grades Calculator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>Grades Calculator</h1>
+    <p class="sub">See where you stand in your course</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="picker" class="card">
+    <h2>Select your course</h2>
+    <label for="instructor">Instructor</label>
+    <select id="instructor"><option value="">Choose an instructor</option></select>
+    <label for="course">Course</label>
+    <select id="course" disabled><option value="">Choose an instructor first</option></select>
+  </section>
+
+  <section id="calc" hidden>
+    <div class="titlebar">
+      <div>
+        <h2 id="courseTitle"></h2>
+        <p class="muted" id="instrName"></p>
+      </div>
+      <button id="reset" class="ghost" type="button">Reset grades</button>
+    </div>
+
+    <div id="notice" class="notice" role="alert" hidden></div>
+
+    <div class="results" aria-live="polite">
+      <div class="stat"><span class="k">Points achieved</span><span class="v" id="rPoints">0</span><span class="s" id="rPointsOf"></span></div>
+      <div class="stat"><span class="k">Course completed</span><span class="v" id="rDone">0%</span><span class="s">of the course grade</span></div>
+      <div class="stat"><span class="k">Course grade earned</span><span class="v" id="rEarned">0</span><span class="s" id="rEarnedOf"></span></div>
+      <div class="stat hi"><span class="k">Current grade</span><span class="v" id="rPct">-</span><span class="s" id="rLetter">enter a grade</span></div>
+    </div>
+    <div class="bar" aria-hidden="true"><div id="bar"></div></div>
+
+    <div class="table" id="rows"></div>
+
+    <p class="help">
+      <strong>Missed an assessment?</strong> If the Associate Dean's office approved an adjustment for it, switch on
+      "Missed (approved)". Its weight is shifted proportionally to all later assessments, and the new weights appear
+      right away. If a shift would push any single assessment above the cap, a make-up assessment is required instead.
+    </p>
+    <p class="help" id="quizNote"></p>
+    <p class="fine">Unofficial estimate for planning only. Your instructor determines final grades.</p>
+  </section>
+</main>
+
+<script src="courses.js"></script>
+<script src="calc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
