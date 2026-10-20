@@ -29,6 +29,7 @@
         li.setAttribute("aria-selected", sel.value === o.value ? "true" : "false");
         li.addEventListener("mousedown", function (e) { e.preventDefault(); });
         li.addEventListener("click", function () { choose(o.value); });
+        (function (idx) { li.addEventListener("mouseenter", function () { setActive(idx); }); })(items.length);
         list.appendChild(li); items.push(li);
       });
       var cur = sel.options[sel.selectedIndex];

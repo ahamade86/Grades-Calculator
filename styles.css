@@ -144,3 +144,31 @@ select:focus,input:focus,button:focus-visible{outline:3px solid #d9a3b5;outline-
 .trow .x{width:36px;height:36px;padding:0;font-size:1.2rem;line-height:1}
 
 @media (min-width:721px){.trow .appr{display:none}}
+
+/* while the mouse is over the list, only the option under the mouse is highlighted */
+.dd-list:hover .dd-opt.active:not(:hover){background:transparent}
+
+/* ---- phone layouts (override earlier mobile rules) ---- */
+@media (max-width:720px){
+  /* course calculators: the Missed toggle sits on the same row as the grade box */
+  .row{grid-template-columns:auto 1fr;gap:10px 14px;align-items:center}
+  .row .name{grid-column:1/-1}
+  .row .score{grid-column:1;grid-row:auto}
+  .row .mcell{grid-column:2;grid-row:auto}
+  .row .sw{grid-column:auto}
+  .row .sw span:last-child{font-size:.85rem;line-height:1.2}
+
+  /* Ali's tracker: number and remove button on row 1, weight and missed toggle share a row */
+  .trow{grid-template-columns:1fr 1fr;grid-template-areas:"tn x" "label label" "earned max" "weight missed" "adj pct";gap:10px 12px;align-items:end;padding:14px}
+  .trow > div:nth-child(1){grid-area:tn;align-self:center;grid-column:auto}
+  .trow > div:nth-child(2){grid-area:label;grid-column:auto}
+  .trow > div:nth-child(3){grid-area:earned;grid-column:auto}
+  .trow > div:nth-child(4){grid-area:max;grid-column:auto}
+  .trow > div:nth-child(5){grid-area:weight;grid-column:auto}
+  .trow > div:nth-child(6){grid-area:missed;grid-column:auto;align-self:end;padding-bottom:8px}
+  .trow > div:nth-child(7){grid-area:adj;grid-column:auto}
+  .trow > div:nth-child(8){grid-area:pct;grid-column:auto}
+  .trow > div:nth-child(9){grid-area:x;justify-self:end;align-self:center;grid-column:auto}
+  .trow .sw span:last-child{font-size:.85rem;line-height:1.2}
+  .trow2{grid-template-columns:1fr 1.2fr 1.2fr;padding:11px 12px;font-size:.92rem}
+}
