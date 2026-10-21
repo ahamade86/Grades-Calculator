@@ -10,9 +10,10 @@
 (function (root) {
   function has(scores, id) { var s = scores[id]; return s !== null && s !== undefined && !isNaN(s); }
 
-  function pickDrops(course, scores, missed) {
-    var pool = course.quizPool, out = {};
-    if (!pool) return out;
+  // tieOrder "later": on an exact tie the later quiz is dropped first; "earlier": the earlier quiz is.
+  function pickDrops(course, scores, missed, tieOrder) {
+    var pool = course.quizPool, out = {}, tie = false;
+    if (!pool) return { map: out, tie: false };
     var cands = course.items.filter(function (i) { return i.type === "quiz" && !missed[i.id]; });
     var need = Math.min(pool.drop, cands.length);
     var blank = cands.filter(function (q) { return !has(scores, q.id); }).reverse(); // latest first
@@ -20,22 +21,27 @@
     need -= Math.min(need, blank.length);
     if (need > 0) {
       var entered = cands.filter(function (q) { return has(scores, q.id); });
+      var pct = function (q) { return scores[q.id] / q.points; };
+      var sign = tieOrder === "earlier" ? -1 : 1;
       entered.sort(function (a, b) {
-        var d = scores[a.id] / a.points - scores[b.id] / b.points;
-        return d !== 0 ? d : course.items.indexOf(b) - course.items.indexOf(a); // tie: later quiz dropped
+        var d = pct(a) - pct(b);
+        if (Math.abs(d) > 1e-9) return d;
+        return sign * (course.items.indexOf(b) - course.items.indexOf(a));
       });
+      if (need < entered.length && Math.abs(pct(entered[need - 1]) - pct(entered[need])) <= 1e-9) tie = true;
       entered.slice(0, need).forEach(function (q) { out[q.id] = "actual"; });
     }
-    return out;
+    return { map: out, tie: tie };
   }
 
-  function compute(course, scores, missed, cap) {
+  function run(course, scores, missed, cap, tieOrder) {
     var items = course.items, pool = course.quizPool;
     var pooled = function (i) { return pool && i.type === "quiz"; };
     var nq = items.filter(function (i) { return i.type === "quiz"; }).length;
     var perQuiz = pool ? pool.totalWeight / (nq - pool.drop) : 0;
 
-    var dropped = pickDrops(course, scores, missed);
+    var pd = pickDrops(course, scores, missed, tieOrder);
+    var dropped = pd.map;
     var seq = items.filter(function (i) { return !dropped[i.id]; });
     var w = {};
     items.forEach(function (i) { w[i.id] = dropped[i.id] ? 0 : (pooled(i) ? perQuiz : i.weight); });
@@ -64,10 +70,19 @@
       pts += scores[it.id]; ptsPossible += it.points;
     });
     return {
-      weights: w, shown: w, invalid: invalid, dropped: dropped,
+      weights: w, shown: w, invalid: invalid, dropped: dropped, tie: pd.tie,
       earned: earned, completed: completed, points: pts, pointsPossible: ptsPossible,
       currentPct: completed > 0 ? earned / completed * 100 : null
     };
+  }
+  // If quizzes tie exactly at the drop cutoff, the tied quiz that gives the student the higher
+  // current grade is the one dropped (both tie orders are tried, the better one is used).
+  function compute(course, scores, missed, cap) {
+    var a = run(course, scores, missed, cap, "later");
+    if (!a.tie) return a;
+    var b = run(course, scores, missed, cap, "earlier");
+    if (a.currentPct !== null && b.currentPct !== null && b.currentPct > a.currentPct + 1e-12) return b;
+    return a;
   }
   function letter(scale, pct) {
     for (var i = 0; i < scale.length; i++) if (pct + 1e-9 >= scale[i][0]) return scale[i][1];

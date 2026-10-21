@@ -29,7 +29,7 @@
         li.setAttribute("aria-selected", sel.value === o.value ? "true" : "false");
         li.addEventListener("mousedown", function (e) { e.preventDefault(); });
         li.addEventListener("click", function () { choose(o.value); });
-        (function (idx) { li.addEventListener("mouseenter", function () { setActive(idx); }); })(items.length);
+        (function (idx) { li.addEventListener("mouseenter", function () { setActive(idx); }); li.addEventListener("mousemove", function () { if (active !== idx) setActive(idx); }); })(items.length);
         list.appendChild(li); items.push(li);
       });
       var cur = sel.options[sel.selectedIndex];
@@ -41,20 +41,21 @@
       active = i; items.forEach(function (li, k) { li.classList.toggle("active", k === i); });
       if (items[i]) items[i].scrollIntoView({ block: "nearest" });
     }
-    function open() {
+    function open(viaKeyboard) {
       if (btn.disabled || !items.length) return;
       list.hidden = false; wrap.classList.add("open"); btn.setAttribute("aria-expanded", "true");
       var si = items.findIndex(function (li) { return li.dataset.value === sel.value; });
-      setActive(si >= 0 ? si : 0);
+      // a mouse open starts with nothing highlighted, so hover is the only highlight
+      if (viaKeyboard) setActive(si >= 0 ? si : 0); else setActive(-1);
     }
     function close() { list.hidden = true; wrap.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
     function choose(v) { sel.value = v; sel.dispatchEvent(new Event("change")); build(); close(); btn.focus(); }
-    btn.addEventListener("click", function () { list.hidden ? open() : close(); });
+    btn.addEventListener("click", function () { list.hidden ? open(false) : close(); });
     btn.addEventListener("keydown", function (e) {
       var isOpen = !list.hidden;
-      if (e.key === "ArrowDown") { e.preventDefault(); if (!isOpen) open(); else setActive(Math.min(items.length - 1, active + 1)); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); if (!isOpen) open(); else setActive(Math.max(0, active - 1)); }
-      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!isOpen) open(); else if (items[active]) choose(items[active].dataset.value); }
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!isOpen) open(true); else setActive(Math.min(items.length - 1, active + 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (!isOpen) open(true); else setActive(Math.max(0, active - 1)); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!isOpen) open(true); else if (items[active]) choose(items[active].dataset.value); }
       else if (e.key === "Escape") { close(); }
       else if (e.key === "Tab") { close(); }
     });
@@ -108,7 +109,7 @@
     $("instrName").textContent = "Instructor: " + instructor.name;
     var p = course.quizPool;
     var nq = course.items.filter(function (i) { return i.type === "quiz"; }).length;
-    $("quizNote").textContent = p ? "Quizzes: your lowest " + p.drop + " of " + nq + " quiz scores are dropped as if they never existed, so only your best " + (nq - p.drop) + " count (" + fmt(p.totalWeight, 2) + "% in total). Until a quiz has a grade, the latest blank quizzes are assumed to be the dropped ones." : "";
+    $("quizNote").textContent = p ? "Quizzes: your lowest " + p.drop + " of " + nq + " quiz scores are dropped as if they never existed, so only your best " + (nq - p.drop) + " count (" + fmt(p.totalWeight, 2) + "% in total). Until a quiz has a grade, the latest blank quizzes are assumed to be the dropped ones. If quizzes tie exactly at the cutoff, the tied quiz that gives you the higher course grade is the one dropped." : "";
     buildRows();
     $("calc").hidden = false;
     notice("");
