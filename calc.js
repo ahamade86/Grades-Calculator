@@ -5,6 +5,7 @@
 //  - Quizzes with no grade yet are assumed dropped first (latest in the course order first).
 //    If fewer than two blanks remain, the lowest scoring entered quizzes are dropped.
 //  - A quiz marked missed (approved) is never one of the drops; its weight shifts forward.
+//  - Bonus is a raw number added to the total earned, outside the 100% of weights.
 //  - Missed weight is shifted proportionally to the later assessments, in course order,
 //    on the course with the dropped quizzes removed. Weights always add up to 100%.
 (function (root) {
@@ -34,7 +35,7 @@
     return { map: out, tie: tie };
   }
 
-  function run(course, scores, missed, cap, tieOrder) {
+  function run(course, scores, missed, cap, tieOrder, bonus) {
     var items = course.items, pool = course.quizPool;
     var pooled = function (i) { return pool && i.type === "quiz"; };
     var nq = items.filter(function (i) { return i.type === "quiz"; }).length;
@@ -71,16 +72,18 @@
     });
     return {
       weights: w, shown: w, invalid: invalid, dropped: dropped, tie: pd.tie,
-      earned: earned, completed: completed, points: pts, pointsPossible: ptsPossible,
-      currentPct: completed > 0 ? earned / completed * 100 : null
+      bonus: bonus, earned: earned + bonus, completed: completed, points: pts, pointsPossible: ptsPossible,
+      currentPct: completed > 0 ? (earned + bonus) / completed * 100 : null
     };
   }
   // If quizzes tie exactly at the drop cutoff, the tied quiz that gives the student the higher
   // current grade is the one dropped (both tie orders are tried, the better one is used).
-  function compute(course, scores, missed, cap) {
-    var a = run(course, scores, missed, cap, "later");
+  // bonus: a raw number added to the total earned (no weight, never dropped, never missed).
+  function compute(course, scores, missed, cap, bonus) {
+    bonus = (typeof bonus === "number" && !isNaN(bonus)) ? bonus : 0;
+    var a = run(course, scores, missed, cap, "later", bonus);
     if (!a.tie) return a;
-    var b = run(course, scores, missed, cap, "earlier");
+    var b = run(course, scores, missed, cap, "earlier", bonus);
     if (a.currentPct !== null && b.currentPct !== null && b.currentPct > a.currentPct + 1e-12) return b;
     return a;
   }

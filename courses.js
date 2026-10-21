@@ -62,10 +62,9 @@ window.GC_DATA = {
             { id: "p2", label: "Project 2", type: "project", points: 100, weight: 20, canMiss: true },
             { id: "q3", label: "Quiz 3", type: "quiz", points: 15, weight: 5, canMiss: true },
             { id: "p3", label: "Project 3", type: "project", points: 100, weight: 30, canMiss: true },
-            // reflection points were not specified, 100 is a placeholder: edit here
-            { id: "r1", label: "Reflection 1", type: "reflection", points: 100, weight: 5, canMiss: true },
-            { id: "r2", label: "Reflection 2", type: "reflection", points: 100, weight: 5, canMiss: true },
-            { id: "r3", label: "Reflection 3", type: "reflection", points: 100, weight: 5, canMiss: false }
+            { id: "r1", label: "Reflection 1", type: "reflection", points: 5, weight: 5, canMiss: false },
+            { id: "r2", label: "Reflection 2", type: "reflection", points: 5, weight: 5, canMiss: false },
+            { id: "r3", label: "Reflection 3", type: "reflection", points: 5, weight: 5, canMiss: false }
           ]
         },
         {

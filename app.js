@@ -3,12 +3,12 @@
   var $ = function (id) { return document.getElementById(id); };
   var instrSel = $("instructor"), courseSel = $("course");
   var course = null, instructor = null;
-  var scores = {}, missed = {};
+  var scores = {}, missed = {}, bonus = 0;
 
   function fmt(n, d) { var s = (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return s.indexOf(".") >= 0 ? (s.replace(/\.?0+$/, "") || "0") : s; }
   // Grades are never saved: refreshing the page starts over at the instructor selector.
   function save() {}
-  function load() { scores = {}; missed = {}; }
+  function load() { scores = {}; missed = {}; bonus = 0; }
 
   // Custom dropdown that wraps a native <select> (kept hidden for the logic) and always opens below the box.
   function enhanceSelect(sel, labelId) {
@@ -116,7 +116,7 @@
     update();
   });
 
-  $("reset").addEventListener("click", function () { scores = {}; missed = {}; save(); notice(""); buildRows(); update(); });
+  $("reset").addEventListener("click", function () { scores = {}; missed = {}; bonus = 0; save(); notice(""); buildRows(); update(); });
 
   function notice(msg) { var n = $("notice"); n.textContent = msg; n.hidden = !msg; }
 
@@ -153,12 +153,25 @@
       });
       rows.appendChild(r);
     });
+    var b = document.createElement("div"); b.className = "row bonusrow"; b.id = "row-bonus";
+    b.innerHTML =
+      '<div class="name">Bonus<small class="tag">Added to your total earned</small></div>' +
+      '<div class="pts"><span class="c-label">Points</span>-</div>' +
+      '<div class="wt"><span class="c-label">Counts toward course</span>Added as is</div>' +
+      '<div class="score"><input type="number" inputmode="decimal" min="0" step="any" aria-label="Bonus" placeholder="-" value="' + (bonus ? bonus : "") + '"><span class="out">pts</span></div>' +
+      '<div class="mcell"><span class="na">Bonus has no weight and is never dropped or missed</span></div>';
+    b.querySelector("input").addEventListener("input", function (e) {
+      var n = parseFloat(e.target.value);
+      if (isNaN(n) || n < 0) { bonus = 0; if (n < 0) e.target.value = ""; } else bonus = n;
+      save(); update();
+    });
+    rows.appendChild(b);
   }
 
   function toggle(it, box) {
     var next = {}; for (var k in missed) next[k] = missed[k];
     next[it.id] = box.checked; if (!box.checked) delete next[it.id];
-    var res = GC.compute(course, scores, next, D.capPct);
+    var res = GC.compute(course, scores, next, D.capPct, bonus);
     if (res.invalid) {
       box.checked = !box.checked;
       if (res.invalid.reason === "cap") {
@@ -172,7 +185,7 @@
   }
 
   function update() {
-    var res = GC.compute(course, scores, missed, D.capPct);
+    var res = GC.compute(course, scores, missed, D.capPct, bonus);
     var base = {};
     course.items.forEach(function (it) {
       var row = $("row-" + it.id), isMissed = !!missed[it.id];
@@ -189,10 +202,11 @@
       row.classList.toggle("dropped", dropped);
       tag.textContent = isMissed ? "Weight shifted to later assessments" : (dropped ? (res.dropped[it.id] === "assumed" ? "Dropped until graded" : "Dropped (lowest scores)") : "");
     });
+    $("row-bonus").classList.toggle("on", bonus > 0);
     $("rDone").textContent = fmt(res.completed, 1) + "%";
     $("bar").style.width = Math.min(100, res.completed) + "%";
     $("rEarned").textContent = fmt(res.earned, 2);
-    $("rEarnedOf").textContent = "out of " + fmt(res.completed, 1) + " completed";
+    $("rEarnedOf").textContent = "out of " + fmt(res.completed, 1) + " completed" + (bonus > 0 ? ", includes " + fmt(bonus, 2) + " bonus" : "");
     if (res.currentPct === null) { $("rPct").textContent = "-"; $("rLetter").textContent = "-"; }
     else { $("rPct").textContent = fmt(res.currentPct, 1) + "%"; $("rLetter").textContent = GC.letter(D.letterScale, res.currentPct); }
   }
