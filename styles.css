@@ -61,7 +61,7 @@ select:focus,input:focus,button:focus-visible{outline:3px solid #e0aea5;outline-
 .score input::-webkit-outer-spin-button,.score input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .score .out{display:inline-block;min-width:46px;color:var(--muted);white-space:nowrap;font-size:.9rem}
 .row .mcell{display:flex;align-items:center;min-height:100%}
-.sw{display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;user-select:none}
+.sw{margin:0;display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;user-select:none}
 .sw input{position:absolute;opacity:0;pointer-events:none}
 .sw .track{width:42px;height:24px;border-radius:99px;background:#cfc6c8;position:relative;transition:background .15s;flex:none}
 .sw .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
